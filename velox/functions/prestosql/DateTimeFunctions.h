@@ -1050,23 +1050,20 @@ struct TimeZoneHourFunction : public TimestampWithTimezoneSupport<T> {
       const arg_type<TimestampWithTimezone>& timestampWithTimezone) {
     // Convert timestampWithTimezone to a timestamp representing the moment at
     // the zone in timestampWithTimezone.
-    Timestamp timeStamp = this->toTimestamp(timestampWithTimezone);
-
-    // Get timestamp in seconds
-    time_t epoch = timeStamp.getSeconds();
+    Timestamp inputTimeStamp = this->toTimestamp(timestampWithTimezone);
 
     // Get the given timezone name
     auto timezone =
         util::getTimeZoneName(*timestampWithTimezone.template at<1>());
-    // Create tm struct with given timezone
-    setenv("TZ", timezone.c_str(), 1);
-    tzset();
-    struct tm* tmPtr = localtime(&epoch);
 
-    // Get offset in seconds with UTC and convert to hour
-    int timezoneHour = tmPtr->tm_gmtoff / 3600;
-    result = timezoneHour;
-    unsetenv("TZ");
+    auto* timezonePtr = date::locate_zone(timezone);
+
+    // Create a copy of inputTimeStamp and convert it to GMT
+    auto gmtTimeStamp = inputTimeStamp;
+    gmtTimeStamp.toGMT(*timezonePtr);
+
+    // Get offset in seconds with GMT and convert to hour
+    result = (inputTimeStamp.getSeconds() - gmtTimeStamp.getSeconds()) / 3600;
   }
 };
 
