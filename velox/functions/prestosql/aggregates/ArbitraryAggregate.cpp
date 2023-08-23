@@ -285,6 +285,8 @@ exec::AggregateRegistrationResult registerArbitrary(const std::string& name) {
             return std::make_unique<ArbitraryAggregate<int32_t>>(inputType);
           case TypeKind::BIGINT:
             return std::make_unique<ArbitraryAggregate<int64_t>>(inputType);
+          case TypeKind::HUGEINT:
+            return std::make_unique<ArbitraryAggregate<int128_t>>(inputType);
           case TypeKind::REAL:
             return std::make_unique<ArbitraryAggregate<float>>(inputType);
           case TypeKind::DOUBLE:
