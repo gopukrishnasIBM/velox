@@ -367,28 +367,55 @@ TEST_F(ArbitraryTest, interval) {
   testAggregations({data}, {}, {"arbitrary(c2)"}, "SELECT null");
 }
 
-TEST_F(ArbitraryTest, hugeInt) {
+TEST_F(ArbitraryTest, longDecimal) {
   auto data = makeRowVector({// Grouping key.
                              makeFlatVector<int64_t>({1, 1, 2, 2, 3, 3, 4, 4}),
                              makeNullableFlatVector<int128_t>(
-                                 {1000000000000000000 * 100,
-                                  1000000000000000000 * 100,
-                                  2000000000000000000 * 100,
-                                  2000000000000000000 * 100,
+                                 {HugeInt::build(10, 100),
+                                  HugeInt::build(10, 100),
+                                  HugeInt::build(10, 200),
+                                  HugeInt::build(10, 200),
                                   std::nullopt,
                                   std::nullopt,
                                   std::nullopt,
-                                  4000000000000000000 * 100},
-                                 DECIMAL(38, 0)),
-                             makeConstant<int128_t>(std::nullopt, 8)});
+                                  HugeInt::build(10, 400)},
+                                 DECIMAL(38, 8))});
 
   auto expectedResult = makeRowVector({
       makeFlatVector<int64_t>({1, 2, 3, 4}),
       makeNullableFlatVector<int128_t>(
-          {1000000000000000000 * 100,
-           2000000000000000000 * 100,
+          {HugeInt::build(10, 100),
+           HugeInt::build(10, 200),
            std::nullopt,
-           4000000000000000000 * 100}),
+           HugeInt::build(10, 400)},
+          DECIMAL(38, 8)),
+  });
+
+  testAggregations({data}, {"c0"}, {"arbitrary(c1)"}, {expectedResult});
+}
+
+TEST_F(ArbitraryTest, shortDecimal) {
+  auto data = makeRowVector({// Grouping key.
+                             makeFlatVector<int64_t>({1, 1, 2, 2, 3, 3, 4, 4}),
+                             makeNullableFlatVector<int64_t>(
+                                 {10000000000000000,
+                                  10000000000000000,
+                                  20000000000000000,
+                                  20000000000000000,
+                                  std::nullopt,
+                                  std::nullopt,
+                                  std::nullopt,
+                                  40000000000000000},
+                                 DECIMAL(15, 2))});
+
+  auto expectedResult = makeRowVector({
+      makeFlatVector<int64_t>({1, 2, 3, 4}),
+      makeNullableFlatVector<int64_t>(
+          {10000000000000000,
+           20000000000000000,
+           std::nullopt,
+           40000000000000000},
+          DECIMAL(15, 2)),
   });
 
   testAggregations({data}, {"c0"}, {"arbitrary(c1)"}, {expectedResult});
